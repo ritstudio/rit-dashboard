@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIT Studio — 매출·매입 대시보드</title>
+<link rel="icon" href="public/favicon-ritstudio.png" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.08);
+    --text: #111;
+    --muted: #777;
+    --blue: #FF3600;
+    --blue-light: #FFF0EB;
+    --red: #1050F0;
+    --red-light: #EBF0FF;
+    --green: #00C270;
+    --green-light: #E6FFF5;
+    --amber: #5E5E60;
+    --amber-light: #F0F0F1;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #f7f7f5; --surface: #ffffff; --border: rgba(0,0,0,0.08);
+      --text: #111; --muted: #777;
+      --blue-light: #4a1500; --red-light: #0a1a4a;
+      --green-light: #003d28; --amber-light: #2a2a2c;
+    }
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Helvetica Neue', sans-serif; font-size: 14px; line-height: 1.5; padding: 24px 32px 40px; max-width: 1280px; margin: 0 auto; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+  .logo { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .logo span { color: var(--text); }
+
+  .header-btn { font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+  .header-btn:hover { background: var(--bg); }
+  .header-btn.icon-only { padding: 6px 10px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); padding: 24px; width: min(520px, 92vw); box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+  .modal-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted); line-height: 1; padding: 0; }
+  .modal-close:hover { color: var(--text); }
+  .modal-status { font-size: 12px; color: var(--green); margin-top: 10px; min-height: 16px; }
+  .url-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .url-row label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .url-group { flex: 1; min-width: 200px; }
+  input[type=text] { width: 100%; padding: 8px 10px; font-size: 13px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); outline: none; }
+  input[type=text]:focus { border-color: var(--blue); }
+  .btn-load { padding: 8px 18px; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; align-self: flex-end; margin-top: 20px; }
+  .btn-load:hover { opacity: 0.85; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .metric { background: var(--surface); border-radius: var(--radius-sm); padding: 14px 16px; display: flex; flex-direction: column; }
+  .metric-label { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+  .metric-val { font-size: 24px; font-weight: 600; }
+  .metric-sub { font-size: 14px; color: var(--muted); margin-top: 6px; text-align: right; }
+  .metric.blue { background: var(--blue); }
+  .metric.blue .metric-val, .metric.blue .metric-label, .metric.blue .metric-sub { color: #fff; }
+  .metric.red { background: var(--red); }
+  .metric.red .metric-val, .metric.red .metric-label, .metric.red .metric-sub { color: #fff; }
+  .metric.green { background: var(--green); }
+  .metric.green .metric-val, .metric.green .metric-label, .metric.green .metric-sub { color: #fff; }
+  .metric.amber { background: var(--amber); }
+  .metric.amber .metric-val, .metric.amber .metric-label, .metric.amber .metric-sub { color: #fff; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 768px) { .row2 { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) { body { padding: 16px 16px 40px; } }
+
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .card-title { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 14px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  .chart-wrap { position: relative; width: 100%; height: 200px; }
+
+  .legend { display: flex; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
+  .legend span { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  .tx-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tx-table th { color: var(--muted); font-weight: 400; padding: 4px 6px; border-bottom: 0.5px solid var(--border); text-align: left; }
+  .tx-table th.r { text-align: right; }
+  .tx-table td { padding: 7px 6px; border-bottom: 0.5px solid var(--border); }
+  .tx-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
+  .tx-table td.muted { color: var(--muted); }
+  .badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; }
+  .badge.s { background: var(--blue-light); color: var(--blue); }
+  .badge.p { background: var(--red-light); color: var(--red); }
+
+  .empty { text-align: center; padding: 40px 0; color: var(--muted); font-size: 13px; }
+  .refresh-btn { font-size: 11px; padding: 3px 10px; border-radius: 4px; cursor: pointer; background: transparent; border: 0.5px solid var(--border); color: var(--muted); }
+  .refresh-btn:hover { background: var(--bg); }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo"><img src="public/logo-ritstudio-orange.png" alt="RIT Studio" style="height:28px;display:block;" /></div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button class="header-btn" onclick="openModal()">데이터 연결</button>
+    <a class="header-btn icon-only" href="https://docs.google.com/spreadsheets/d/1lGTm_f0NI7UZmkcdknAi1m3g2mGdbjppSRgIOHW12y8/edit" target="_blank" title="구글시트 열기">↗</a>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">데이터 연결 <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="url-row">
+      <div class="url-group" style="flex:1;min-width:100%">
+        <label>구글시트 URL</label>
+        <input type="text" id="sheetUrl" value="https://docs.google.com/spreadsheets/d/1lGTm_f0NI7UZmkcdknAi1m3g2mGdbjppSRgIOHW12y8/edit" />
+      </div>
+      <div class="url-group" style="flex:0 0 130px">
+        <label>매출 시트 GID</label>
+        <input type="text" id="salesGid" value="429942007" />
+      </div>
+      <div class="url-group" style="flex:0 0 130px">
+        <label>매입 시트 GID</label>
+        <input type="text" id="purchaseGid" value="391361719" />
+      </div>
+    </div>
+    <div class="hint" style="margin-bottom:14px;">시트 공유 설정이 "링크가 있는 모든 사용자 — 뷰어"로 설정되어 있어야 합니다.</div>
+    <button class="btn-load" onclick="loadData()">불러오기</button>
+    <div class="modal-status" id="modalStatus"></div>
+  </div>
+</div>
+
+
+<div id="dashboard">
+  <div class="empty">구글시트 URL을 입력하고 불러오기를 눌러주세요.<br>아래는 현재 입력된 데이터 기준 미리보기입니다.</div>
+</div>
+
+<script>
+function openModal() { document.getElementById('modalOverlay').classList.add('open'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+const fmt = v => Math.round(v).toLocaleString('ko-KR');
+const fmtM = v => (Math.round(v/10000)/100).toFixed(0) + '만';
+
+const DEMO_SALES = [
+  {date:'2026-01-20',co:'소리나스튜디오',item:'Michael Choi studio',total:550000,supply:500000,tax:50000},
+  {date:'2026-01-20',co:'주식회사 필르머',item:'(주)필르머 회사소개',total:2200000,supply:2000000,tax:200000},
+  {date:'2026-01-26',co:'애터미 주식회사',item:'해모힘 스포츠 마케팅',total:1474000,supply:1340000,tax:134000},
+  {date:'2026-02-13',co:'애터미 주식회사',item:'포스트바이오틱스',total:1287000,supply:1170000,tax:117000},
+  {date:'2026-02-24',co:'애터미 주식회사',item:'포스트바이오틱스',total:462000,supply:420000,tax:42000},
+  {date:'2026-03-16',co:'애터미 주식회사',item:'애터미 제품 콘텐츠',total:1199000,supply:1090000,tax:109000},
+  {date:'2026-03-24',co:'애터미 주식회사',item:'애터미 제품 콘텐츠',total:1980000,supply:1800000,tax:180000},
+  {date:'2026-04-07',co:'애터미 주식회사',item:'애터미오롯 포토존',total:24780000,supply:22527273,tax:2252727},
+  {date:'2026-04-10',co:'애터미 주식회사',item:'석세스 행사',total:9121200,supply:8292000,tax:829200},
+  {date:'2026-04-14',co:'애터미 주식회사',item:'석세스 행사',total:7700000,supply:7000000,tax:700000},
+  {date:'2026-04-14',co:'애터미 주식회사',item:'지역 행사',total:6666000,supply:6060000,tax:606000},
+  {date:'2026-04-17',co:'애터미 주식회사',item:'오롯 포토존',total:10620000,supply:9654546,tax:965454},
+];
+const DEMO_PURCHASES = [
+  {date:'2026-03-12',co:'주식회사 마지…',item:'보일러 교체설치',total:800000,supply:727273,tax:72727},
+  {date:'2026-04-06',co:'조목조목',item:'에터미 팝업 가구 선금',total:17248000,supply:15680000,tax:1568000},
+  {date:'2026-04-08',co:'주식회사 한진…',item:'카페트',total:1628000,supply:1480000,tax:148000},
+  {date:'2026-04-10',co:'이벤툴',item:'대형 가차머신 2대 임대',total:1606000,supply:1460000,tax:146000},
+  {date:'2026-04-12',co:'카멜레온프린…',item:'허니콤보드',total:2279212,supply:2072011,tax:207201},
+  {date:'2026-04-13',co:'주식회사 광고…',item:'현수막-상품별',total:64350,supply:58500,tax:5850},
+  {date:'2026-04-14',co:'영재과학사',item:'동근캡슐 6cm',total:440000,supply:400000,tax:40000},
+  {date:'2026-04-14',co:'주식회사 광고…',item:'상품별 현수막',total:257400,supply:234000,tax:23400},
+  {date:'2026-04-15',co:'주식회사 광고…',item:'실사출력-보드/합지',total:38170,supply:34700,tax:3470},
+  {date:'2026-04-15',co:'(주)한들아크릴',item:'메인로고스탠드 외',total:5578100,supply:5071000,tax:507100},
+  {date:'2026-04-17',co:'조목조목',item:'에터미 팝업 가구 잔금',total:7502000,supply:6820000,tax:682000},
+];
+
+let salesChart = null, monthChart = null;
+
+function extractSheetId(url) {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+function gvizUrl(sheetId, gid) {
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+}
+
+function parseGviz(text) {
+  const json = JSON.parse(text.slice(text.indexOf('(') + 1, text.lastIndexOf(')')));
+  const rows = json.table?.rows || [];
+  return rows.map(row => {
+    const cols = row.c || [];
+    const getVal = i => cols[i]?.v ?? null;
+
+    let dateVal = getVal(0);
+    let date = '';
+    if (typeof dateVal === 'string') {
+      if (dateVal.startsWith('Date(')) {
+        const parts = dateVal.slice(5, -1).split(',').map(Number);
+        const d = new Date(Date.UTC(parts[0], parts[1], parts[2]));
+        date = d.toISOString().slice(0, 10);
+      } else {
+        date = dateVal;
+      }
+    } else if (dateVal !== null) {
+      date = String(dateVal);
+    }
+
+    return {
+      date,
+      co: String(getVal(1) || ''),
+      item: String(getVal(2) || ''),
+      total: Number(getVal(3)) || 0,
+      supply: Number(getVal(4)) || 0,
+      tax: Number(getVal(5)) || 0,
+    };
+  }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.total > 0);
+}
+
+async function loadData() {
+  const sheetUrl = document.getElementById('sheetUrl').value.trim();
+  const salesGid = document.getElementById('salesGid').value.trim();
+  const purchaseGid = document.getElementById('purchaseGid').value.trim();
+  const sheetId = extractSheetId(sheetUrl);
+  const ms = document.getElementById('modalStatus');
+  if (!sheetId) { ms.style.color='var(--red)'; ms.textContent='유효한 구글시트 URL을 입력해주세요.'; return; }
+
+  ms.style.color='var(--muted)'; ms.textContent='불러오는 중…';
+  try {
+    const [sRes, pRes] = await Promise.all([
+      fetch(gvizUrl(sheetId, salesGid)),
+      fetch(gvizUrl(sheetId, purchaseGid))
+    ]);
+    const [sText, pText] = await Promise.all([sRes.text(), pRes.text()]);
+    const sales = parseGviz(sText);
+    const purchases = parseGviz(pText);
+    ms.style.color='var(--green)';
+    ms.textContent=`연결됨 · 매출 ${sales.length}건 · 매입 ${purchases.length}건`;
+    closeModal();
+    renderDashboard(sales, purchases);
+  } catch(e) {
+    ms.style.color='var(--red)'; ms.textContent='불러오기 실패. 시트 공유 설정을 확인해주세요.';
+    console.error(e);
+  }
+}
+
+function getMonthKey(date) { return date.slice(0,7); }
+
+function renderDashboard(sales, purchases) {
+  const totalSales = sales.reduce((s,r)=>s+r.total,0);
+  const totalPurchases = purchases.reduce((s,r)=>s+r.total,0);
+  const profit = totalSales - totalPurchases;
+  const taxOwed = sales.reduce((s,r)=>s+r.tax,0) - purchases.reduce((s,r)=>s+r.tax,0);
+  const costRate = totalSales > 0 ? (totalPurchases/totalSales*100).toFixed(1) : 0;
+
+  const months = [...new Set([...sales,...purchases].map(r=>getMonthKey(r.date)))].sort();
+  const monthLabels = months.map(m => m.slice(5)+'월');
+  const monthSales = months.map(m => sales.filter(r=>getMonthKey(r.date)===m).reduce((s,r)=>s+r.total,0));
+  const monthPurchases = months.map(m => purchases.filter(r=>getMonthKey(r.date)===m).reduce((s,r)=>s+r.total,0));
+
+  const monthProfit = months.map((_,i) => monthSales[i] - monthPurchases[i]);
+
+  const allTx = [
+    ...sales.map(r=>({...r,type:'s'})),
+    ...purchases.map(r=>({...r,type:'p'}))
+  ].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
+
+  const clientMap = {};
+  sales.forEach(r=>{ clientMap[r.co] = (clientMap[r.co]||0)+r.total; });
+  const topClients = Object.entries(clientMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  document.getElementById('dashboard').innerHTML = `
+    <div class="metrics">
+      <div class="metric blue">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span class="metric-label" style="margin-bottom:0">총 매출</span><span class="metric-sub" style="margin-top:0">${sales.length}건</span></div>
+        <div class="metric-val">${fmt(totalSales)} <span style="font-size:13px;font-weight:400;">원</span></div>
+      </div>
+      <div class="metric red">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span class="metric-label" style="margin-bottom:0">총 매입</span><span class="metric-sub" style="margin-top:0">${purchases.length}건</span></div>
+        <div class="metric-val">${fmt(totalPurchases)} <span style="font-size:13px;font-weight:400;">원</span></div>
+      </div>
+      <div class="metric green">
+        <div class="metric-label">순이익</div>
+        <div class="metric-val">${fmt(profit)} <span style="font-size:13px;font-weight:400;">원</span></div>
+      </div>
+      <div class="metric amber">
+        <div class="metric-label">납부 부가세</div>
+        <div class="metric-val">${fmt(taxOwed)} <span style="font-size:13px;font-weight:400;">원 예상</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="card-title" style="margin-bottom:0">월별 매출 · 매입 · 손익</div>
+        <span id="refreshInfo" style="font-size:11px;color:var(--muted);"></span>
+      </div>
+      <div class="legend">
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)"><span class="legend-dot" style="background:#FF3600;display:inline-block;width:10px;height:10px;border-radius:2px;"></span>매출</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)"><span class="legend-dot" style="background:rgba(16,80,240,0.7);display:inline-block;width:10px;height:10px;border-radius:2px;"></span>매입</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)"><span style="display:inline-block;width:18px;border-top:2px dashed #00C270;margin-bottom:1px;"></span>손익</span>
+      </div>
+      <div class="chart-wrap"><canvas id="monthChart" role="img" aria-label="월별 매출 매입 손익 복합 차트">월별 매출·매입·손익 비교</canvas></div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:16px;">
+        <thead><tr>
+          <th style="color:var(--muted);font-weight:400;padding:5px 8px;border-bottom:0.5px solid var(--border);text-align:left;"></th>
+          <th style="color:var(--muted);font-weight:400;padding:5px 8px;border-bottom:0.5px solid var(--border);text-align:right;">매출</th>
+          <th style="color:var(--muted);font-weight:400;padding:5px 8px;border-bottom:0.5px solid var(--border);text-align:right;">매입</th>
+          <th style="color:var(--muted);font-weight:400;padding:5px 8px;border-bottom:0.5px solid var(--border);text-align:right;">손익</th>
+        </tr></thead>
+        <tbody>${months.map((m,i)=>`
+          <tr>
+            <td style="padding:7px 8px;border-bottom:0.5px solid var(--border);font-weight:500;">${monthLabels[i]}</td>
+            <td style="padding:7px 8px;border-bottom:0.5px solid var(--border);text-align:right;color:var(--blue);font-variant-numeric:tabular-nums;">${fmt(monthSales[i])}</td>
+            <td style="padding:7px 8px;border-bottom:0.5px solid var(--border);text-align:right;color:var(--red);font-variant-numeric:tabular-nums;">${monthPurchases[i]>0?fmt(monthPurchases[i]):'—'}</td>
+            <td style="padding:7px 8px;border-bottom:0.5px solid var(--border);text-align:right;color:#00C270;font-variant-numeric:tabular-nums;">${fmt(monthProfit[i])}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="row2">
+      <div class="card">
+        <div class="card-title">매출 내역</div>
+        <table class="tx-table">
+          <thead><tr><th>날짜</th><th>거래처</th><th>품목</th><th class="r">공급가액</th><th class="r">합계</th></tr></thead>
+          <tbody>${sales.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`
+            <tr>
+              <td class="muted" style="white-space:nowrap">${r.date.slice(5)}</td>
+              <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.co}</td>
+              <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${r.item}</td>
+              <td class="r">${fmt(r.supply)}</td>
+              <td class="r" style="font-weight:500">${fmt(r.total)}</td>
+            </tr>`).join('')}
+          </tbody>
+          <tfoot><tr>
+            <td colspan="3" style="padding:8px 6px;font-size:12px;color:var(--muted)">합계 ${sales.length}건</td>
+            <td class="r" style="padding:8px 6px;font-weight:500">${fmt(sales.reduce((s,r)=>s+r.supply,0))}</td>
+            <td class="r" style="padding:8px 6px;font-weight:600">${fmt(sales.reduce((s,r)=>s+r.total,0))}</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">매입 내역</div>
+        <table class="tx-table">
+          <thead><tr><th>날짜</th><th>거래처</th><th>품목</th><th class="r">공급가액</th><th class="r">합계</th></tr></thead>
+          <tbody>${purchases.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`
+            <tr>
+              <td class="muted" style="white-space:nowrap">${r.date.slice(5)}</td>
+              <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.co}</td>
+              <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${r.item}</td>
+              <td class="r">${fmt(r.supply)}</td>
+              <td class="r" style="font-weight:500">${fmt(r.total)}</td>
+            </tr>`).join('')}
+          </tbody>
+          <tfoot><tr>
+            <td colspan="3" style="padding:8px 6px;font-size:12px;color:var(--muted)">합계 ${purchases.length}건</td>
+            <td class="r" style="padding:8px 6px;font-weight:500">${fmt(purchases.reduce((s,r)=>s+r.supply,0))}</td>
+            <td class="r" style="padding:8px 6px;font-weight:600">${fmt(purchases.reduce((s,r)=>s+r.total,0))}</td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="card">
+        <div class="card-title">주요 매출처</div>
+        ${topClients.map(([co,amt])=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border);">
+            <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">${co}</span>
+            <span style="font-size:12px;font-weight:500;font-variant-numeric:tabular-nums">${fmt(amt)}</span>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">부가세 계산</div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted)">매출 세액</span>
+          <span style="font-size:12px;font-variant-numeric:tabular-nums">${fmt(sales.reduce((s,r)=>s+r.tax,0))}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted)">매입 세액 공제</span>
+          <span style="font-size:12px;font-variant-numeric:tabular-nums">− ${fmt(purchases.reduce((s,r)=>s+r.tax,0))}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0 4px;margin-top:4px;border-top:1px solid var(--border);">
+          <span style="font-size:13px;font-weight:500">납부 예정액</span>
+          <span style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums">${fmt(taxOwed)} 원</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (monthChart) monthChart.destroy();
+  monthChart = new Chart(document.getElementById('monthChart'), {
+    type: 'bar',
+    data: {
+      labels: monthLabels,
+      datasets: [
+        { type:'bar',  label:'매출', data:monthSales,    backgroundColor:'#FF3600',              borderRadius:3, order:2, yAxisID:'y' },
+        { type:'bar',  label:'매입', data:monthPurchases,backgroundColor:'rgba(16,80,240,0.7)', borderRadius:3, order:2, yAxisID:'y' },
+        { type:'line', label:'손익', data:monthProfit,
+          borderColor:'#00C270', backgroundColor:'rgba(0,194,112,0.06)',
+          borderWidth:2, borderDash:[5,4],
+          pointBackgroundColor:'#00C270', pointRadius:5, pointHoverRadius:7,
+          fill:false, tension:0.3, order:1, yAxisID:'y' }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label: ctx => ` ${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString('ko-KR')}원` } }
+      },
+      scales:{
+        x:{ ticks:{ autoSkip:false, font:{size:12} }, grid:{display:false} },
+        y:{ ticks:{ callback: v => fmtM(v), font:{size:11} }, grid:{color:'rgba(128,128,128,0.1)'} }
+      }
+    }
+  });
+
+  startRefreshTimer();
+}
+
+let refreshCountdown = 300;
+let refreshTimer = null;
+
+function startRefreshTimer() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshCountdown = 300;
+  refreshTimer = setInterval(() => {
+    refreshCountdown--;
+    const el = document.getElementById('refreshInfo');
+    if (!el) return;
+    if (refreshCountdown <= 0) {
+      el.innerHTML = '새로고침 중…';
+      refreshCountdown = 300;
+    } else {
+      const m = Math.floor(refreshCountdown/60);
+      const s = refreshCountdown % 60;
+      const label = m > 0 ? `${m}분 ${s}초 후 갱신` : `${s}초 후 갱신`;
+      el.innerHTML = `<span>${label}</span> &nbsp;<button class="refresh-btn" onclick="loadData()">지금</button>`;
+    }
+  }, 1000);
+}
+
+loadData();
+</script>
+</body>
+</html>
