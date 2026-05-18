@@ -148,32 +148,51 @@ function closeModalOutside(e) { if (e.target === document.getElementById('modalO
 const fmt = v => Math.round(v).toLocaleString('ko-KR');
 const fmtM = v => (Math.round(v/10000)/100).toFixed(0) + '만';
 
+const mk = (total, supply) => ({total, supply, tax: total - supply});
 const DEMO_SALES = [
-  {date:'2026-01-20',co:'소리나스튜디오',item:'Michael Choi studio',total:550000,supply:500000,tax:50000},
-  {date:'2026-01-20',co:'주식회사 필르머',item:'(주)필르머 회사소개',total:2200000,supply:2000000,tax:200000},
-  {date:'2026-01-26',co:'애터미 주식회사',item:'해모힘 스포츠 마케팅',total:1474000,supply:1340000,tax:134000},
-  {date:'2026-02-13',co:'애터미 주식회사',item:'포스트바이오틱스',total:1287000,supply:1170000,tax:117000},
-  {date:'2026-02-24',co:'애터미 주식회사',item:'포스트바이오틱스',total:462000,supply:420000,tax:42000},
-  {date:'2026-03-16',co:'애터미 주식회사',item:'애터미 제품 콘텐츠',total:1199000,supply:1090000,tax:109000},
-  {date:'2026-03-24',co:'애터미 주식회사',item:'애터미 제품 콘텐츠',total:1980000,supply:1800000,tax:180000},
-  {date:'2026-04-07',co:'애터미 주식회사',item:'애터미오롯 포토존',total:24780000,supply:22527273,tax:2252727},
-  {date:'2026-04-10',co:'애터미 주식회사',item:'석세스 행사',total:9121200,supply:8292000,tax:829200},
-  {date:'2026-04-14',co:'애터미 주식회사',item:'석세스 행사',total:7700000,supply:7000000,tax:700000},
-  {date:'2026-04-14',co:'애터미 주식회사',item:'지역 행사',total:6666000,supply:6060000,tax:606000},
-  {date:'2026-04-17',co:'애터미 주식회사',item:'오롯 포토존',total:10620000,supply:9654546,tax:965454},
+  {date:'2026-01-20',co:'소리나스튜디오',item:'Michael Choi studio',...mk(550000,500000)},
+  {date:'2026-01-20',co:'주식회사 필르머',item:'(주)필르머 회사소개',...mk(2200000,2000000)},
+  {date:'2026-01-26',co:'애터미 주식회사',item:'해모힘 스포츠 마케팅',...mk(1474000,1340000)},
+  {date:'2026-02-13',co:'애터미 주식회사',item:'애터미(주) 포스트바이오틱스',...mk(1287000,1170000)},
+  {date:'2026-02-24',co:'애터미 주식회사',item:'애터미(주) 포스트바이오틱스',...mk(462000,420000)},
+  {date:'2026-03-16',co:'애터미 주식회사',item:'애터미 제품 콘텐츠',...mk(1199000,1090000)},
+  {date:'2026-03-24',co:'애터미 주식회사',item:'애터미 제품 콘텐츠',...mk(1980000,1800000)},
+  {date:'2026-04-07',co:'애터미 주식회사',item:'애터미오롯 포토존',...mk(24780000,22527273)},
+  {date:'2026-04-10',co:'애터미 주식회사',item:'애터미(주) 석세스 행사',...mk(9121200,8292000)},
+  {date:'2026-04-14',co:'애터미 주식회사',item:'애터미(주) 석세스 행사',...mk(7700000,7000000)},
+  {date:'2026-04-14',co:'애터미 주식회사',item:'애터미(주) 지역 행사',...mk(6666000,6060000)},
+  {date:'2026-04-17',co:'애터미 주식회사',item:'애터미 오롯 포토존',...mk(10620001,9654546)},
+  {date:'2026-05-08',co:'애터미 주식회사',item:'노니마케팅 캠페인 디자인 개발 및 리플렛 제작비용',...mk(10142000,9220000)},
+  {date:'2026-05-13',co:'애터미 주식회사',item:'석세스아카데미 이벤트 키비주얼 디자인 및 제작',...mk(8893500,8085000)},
+  {date:'2026-05-15',co:'몰스래쉬',item:'몰스래쉬 디자인인쇄물 제작',...mk(1279300,1163000)},
+  {date:'2026-05-18',co:'애터미 주식회사',item:'석세스행사 내부공간 디스플레이 디자인 개발 및 제작',...mk(10964800,9968000)},
 ];
 const DEMO_PURCHASES = [
-  {date:'2026-03-12',co:'주식회사 마지…',item:'보일러 교체설치',total:800000,supply:727273,tax:72727},
-  {date:'2026-04-06',co:'조목조목',item:'에터미 팝업 가구 선금',total:17248000,supply:15680000,tax:1568000},
-  {date:'2026-04-08',co:'주식회사 한진…',item:'카페트',total:1628000,supply:1480000,tax:148000},
-  {date:'2026-04-10',co:'이벤툴',item:'대형 가차머신 2대 임대',total:1606000,supply:1460000,tax:146000},
-  {date:'2026-04-12',co:'카멜레온프린…',item:'허니콤보드',total:2279212,supply:2072011,tax:207201},
-  {date:'2026-04-13',co:'주식회사 광고…',item:'현수막-상품별',total:64350,supply:58500,tax:5850},
-  {date:'2026-04-14',co:'영재과학사',item:'동근캡슐 6cm',total:440000,supply:400000,tax:40000},
-  {date:'2026-04-14',co:'주식회사 광고…',item:'상품별 현수막',total:257400,supply:234000,tax:23400},
-  {date:'2026-04-15',co:'주식회사 광고…',item:'실사출력-보드/합지',total:38170,supply:34700,tax:3470},
-  {date:'2026-04-15',co:'(주)한들아크릴',item:'메인로고스탠드 외',total:5578100,supply:5071000,tax:507100},
-  {date:'2026-04-17',co:'조목조목',item:'에터미 팝업 가구 잔금',total:7502000,supply:6820000,tax:682000},
+  {date:'2026-03-12',co:'주식회사 마지막이다',item:'보일러 교체설치',...mk(800000,727273)},
+  {date:'2026-04-06',co:'조목조목',item:'에터미 팝업 가구 선금',...mk(17248000,15680000)},
+  {date:'2026-04-08',co:'주식회사 한진',item:'카페트',...mk(1628000,1480000)},
+  {date:'2026-04-10',co:'이벤툴',item:'대형 가차머신 2대 임대',...mk(1606000,1460000)},
+  {date:'2026-04-12',co:'카멜레온프린팅',item:'허니콤보드',...mk(2279212,2072011)},
+  {date:'2026-04-13',co:'주식회사 광고나라',item:'현수막-상품별 현수막',...mk(64350,58500)},
+  {date:'2026-04-14',co:'영재과학사',item:'동근캡슐 6cm',...mk(440000,400000)},
+  {date:'2026-04-14',co:'주식회사 광고나라',item:'상품별 현수막 2-장',...mk(257400,234000)},
+  {date:'2026-04-15',co:'주식회사 광고나라',item:'실사출력-보드/합지',...mk(38170,34700)},
+  {date:'2026-04-15',co:'(주)한들아크릴',item:'메인로고스탠드 외',...mk(5578100,5071000)},
+  {date:'2026-04-17',co:'조목조목',item:'에터미 팝업 가구 잔금',...mk(7502000,6820000)},
+  {date:'2026-04-20',co:'USERS',item:'애터미 팝업 디자인',...mk(4400000,4000000)},
+  {date:'2026-04-20',co:'카멜레온프린팅',item:'허니콤보드 반품',...mk(-60000,-54545)},
+  {date:'2026-05-08',co:'정성명판조각',item:'명판',...mk(11000,10000)},
+  {date:'2026-05-08',co:'빌포스트(주)',item:'4월 인쇄물',...mk(84380,76709)},
+  {date:'2026-05-08',co:'오늘도 행복해',item:'조화',...mk(2200000,2000000)},
+  {date:'2026-05-08',co:'이벤툴',item:'대형 가차머신 3대 임대',...mk(2475000,2250000)},
+  {date:'2026-05-10',co:'영재과학사',item:'동근캡슐 6cm',...mk(550000,500000)},
+  {date:'2026-05-11',co:'이프린팅주식회사',item:'패트배너',...mk(746570,678700)},
+  {date:'2026-05-11',co:'이프린팅주식회사',item:'유포+폼보드(합지)',...mk(165550,150500)},
+  {date:'2026-05-11',co:'(주)인터프로커',item:'주문번호:26-0511-7',...mk(26895,24450)},
+  {date:'2026-05-11',co:'플랜트리',item:'원목플레이트',...mk(110000,100000)},
+  {date:'2026-05-13',co:'이프린팅주식회사',item:'추가금액 정산',...mk(198000,180000)},
+  {date:'2026-05-15',co:'(주)한들아크릴',item:'1번로고블럭스탠드 외',...mk(968000,880000)},
+  {date:'2026-05-15',co:'효성TPS(주)',item:'애터미 노니 리플렛',...mk(4288900,3899000)},
 ];
 
 let salesChart = null, monthChart = null;
@@ -187,36 +206,58 @@ function gvizUrl(sheetId, gid) {
   return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
 }
 
-function parseGviz(text) {
+function parseDate(dateVal) {
+  if (dateVal === null || dateVal === undefined) return '';
+  if (typeof dateVal === 'string') {
+    if (dateVal.startsWith('Date(')) {
+      const parts = dateVal.slice(5, -1).split(',').map(Number);
+      const d = new Date(Date.UTC(parts[0], parts[1], parts[2]));
+      return d.toISOString().slice(0, 10);
+    }
+    // YYYY/MM/DD → YYYY-MM-DD
+    let norm = dateVal.trim().replace(/\//g, '-');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(norm)) return norm;
+    // YYYY. MM. DD. (한국 날짜 형식)
+    const k = norm.match(/^(\d{4})[.\s-]+(\d{1,2})[.\s-]+(\d{1,2})/);
+    if (k) return `${k[1]}-${k[2].padStart(2,'0')}-${k[3].padStart(2,'0')}`;
+    // MM/DD/YYYY
+    const us = norm.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if (us) return `${us[3]}-${us[1].padStart(2,'0')}-${us[2].padStart(2,'0')}`;
+    return norm;
+  }
+  if (typeof dateVal === 'number') {
+    const d = new Date(dateVal);
+    return d.toISOString().slice(0, 10);
+  }
+  return String(dateVal);
+}
+
+function parseGviz(text, label) {
   const json = JSON.parse(text.slice(text.indexOf('(') + 1, text.lastIndexOf(')')));
   const rows = json.table?.rows || [];
-  return rows.map(row => {
+  const all = rows.map(row => {
     const cols = row.c || [];
     const getVal = i => cols[i]?.v ?? null;
-
-    let dateVal = getVal(0);
-    let date = '';
-    if (typeof dateVal === 'string') {
-      if (dateVal.startsWith('Date(')) {
-        const parts = dateVal.slice(5, -1).split(',').map(Number);
-        const d = new Date(Date.UTC(parts[0], parts[1], parts[2]));
-        date = d.toISOString().slice(0, 10);
-      } else {
-        date = dateVal;
-      }
-    } else if (dateVal !== null) {
-      date = String(dateVal);
-    }
-
+    const parseNum = v => { const n = Number(String(v ?? '').replace(/[₩,\s]/g, '')); return isNaN(n) ? 0 : n; };
+    const supply = parseNum(getVal(3));
+    const total  = parseNum(getVal(4));
     return {
-      date,
+      date: parseDate(getVal(0)),
       co: String(getVal(1) || ''),
       item: String(getVal(2) || ''),
-      total: Number(getVal(3)) || 0,
-      supply: Number(getVal(4)) || 0,
-      tax: Number(getVal(5)) || 0,
+      total,
+      supply,
+      tax: total - supply,
     };
-  }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.total > 0);
+  });
+
+  const valid = all.filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.total !== 0);
+  const skipped = all.filter(r => !/^\d{4}-\d{2}-\d{2}$/.test(r.date) || r.total === 0);
+  console.group(`[${label}] 파싱 결과: 전체 ${all.length}행 → 유효 ${valid.length}행`);
+  if (skipped.length) console.log('필터된 행 (소계/합계/빈 행):', skipped);
+  console.log('유효 행:', valid);
+  console.groupEnd();
+  return valid;
 }
 
 async function loadData() {
@@ -234,10 +275,10 @@ async function loadData() {
       fetch(gvizUrl(sheetId, purchaseGid))
     ]);
     const [sText, pText] = await Promise.all([sRes.text(), pRes.text()]);
-    const sales = parseGviz(sText);
-    const purchases = parseGviz(pText);
+    const sales = parseGviz(sText, '매출');
+    const purchases = parseGviz(pText, '매입');
     ms.style.color='var(--green)';
-    ms.textContent=`연결됨 · 매출 ${sales.length}건 · 매입 ${purchases.length}건`;
+    ms.textContent=`연결됨 · 매출 ${sales.length}건 · 매입 ${purchases.length}건 (콘솔에서 상세 로그 확인 가능)`;
     closeModal();
     renderDashboard(sales, purchases);
   } catch(e) {
@@ -274,15 +315,15 @@ function renderDashboard(sales, purchases) {
   document.getElementById('dashboard').innerHTML = `
     <div class="metrics">
       <div class="metric blue">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span class="metric-label" style="margin-bottom:0">총 매출</span><span class="metric-sub" style="margin-top:0">${sales.length}건</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span class="metric-label" style="margin-bottom:0">총 매출(VAT)</span><span class="metric-sub" style="margin-top:0">${sales.length}건</span></div>
         <div class="metric-val">${fmt(totalSales)} <span style="font-size:13px;font-weight:400;">원</span></div>
       </div>
       <div class="metric red">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span class="metric-label" style="margin-bottom:0">총 매입</span><span class="metric-sub" style="margin-top:0">${purchases.length}건</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span class="metric-label" style="margin-bottom:0">총 매입(VAT)</span><span class="metric-sub" style="margin-top:0">${purchases.length}건</span></div>
         <div class="metric-val">${fmt(totalPurchases)} <span style="font-size:13px;font-weight:400;">원</span></div>
       </div>
       <div class="metric green">
-        <div class="metric-label">순이익</div>
+        <div class="metric-label">순이익(VAT)</div>
         <div class="metric-val">${fmt(profit)} <span style="font-size:13px;font-weight:400;">원</span></div>
       </div>
       <div class="metric amber">
@@ -324,7 +365,7 @@ function renderDashboard(sales, purchases) {
       <div class="card">
         <div class="card-title">매출 내역</div>
         <table class="tx-table">
-          <thead><tr><th>날짜</th><th>거래처</th><th>품목</th><th class="r">공급가액</th><th class="r">합계</th></tr></thead>
+          <thead><tr><th>날짜</th><th>거래처</th><th>품목</th><th class="r">공급가액</th><th class="r">합계(VAT)</th></tr></thead>
           <tbody>${sales.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`
             <tr>
               <td class="muted" style="white-space:nowrap">${r.date.slice(5)}</td>
@@ -344,7 +385,7 @@ function renderDashboard(sales, purchases) {
       <div class="card">
         <div class="card-title">매입 내역</div>
         <table class="tx-table">
-          <thead><tr><th>날짜</th><th>거래처</th><th>품목</th><th class="r">공급가액</th><th class="r">합계</th></tr></thead>
+          <thead><tr><th>날짜</th><th>거래처</th><th>품목</th><th class="r">공급가액</th><th class="r">합계(VAT)</th></tr></thead>
           <tbody>${purchases.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`
             <tr>
               <td class="muted" style="white-space:nowrap">${r.date.slice(5)}</td>
@@ -444,7 +485,7 @@ function startRefreshTimer() {
   }, 1000);
 }
 
-loadData();
+renderDashboard(DEMO_SALES, DEMO_PURCHASES);
 </script>
 </body>
 </html>
